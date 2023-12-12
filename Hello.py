@@ -15,16 +15,15 @@
 import streamlit as st
 from streamlit.logger import get_logger
 import pandas as pd
-import altair as alt
-import base64
-import numpy
-import pydeck
+from matplotlib import pyplot as plt
+import seaborn as sns
+import sklearn
 
 LOGGER = get_logger(__name__)
 
 
 def run():
-    st.set_page_config(
+    st.set_page_config( 
         page_title="Pokemon C.H.A.M.P.S.",
         page_icon="🏆",
     )
@@ -47,25 +46,86 @@ def run():
     """
     )
 
-    st.header('Enter a card')
 
-    card_input = "Lugia"
+# Data Prep
+data_file = 'data/tournaments.csv'
+df = pd.read_csv(data_file)
 
-    card = st.text_area("Card:", card_input, height=50)
-    card = card.splitlines()
-    card = '\n'.join(card) #Concatonates list to string
+# Streamlit App
+st.title('Pokemon Tournaments Analysis')
 
-    st.write("""
-             ***
-             """)
-    
-    st.header('Input: ')
-    card
+# Visualization #1: Display the top 10 cards by occurrences
+st.header('Top 10 Cards in Winning Decks')
+card_occurrences = df['name_card'].value_counts()
+top_cards = card_occurrences.head(10)
+st.bar_chart(top_cards)
 
-    st.header('Output: ')
+# Visualization #2: Correlation Heatmap
+st.header('Correlation Heatmap of Numerical Variables')
+numerical_columns = df[['amount_card', 'price_card', 'all_time_score', 'ranking_player_tournament']]
+correlation_matrix = numerical_columns.corr()
+st.pyplot(sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5).figure)
 
+# Visualization #3: Count the number of tournaments in each country
+st.header('Number of Tournaments in Each Country')
+region_counts = df['country_tournament'].value_counts(dropna=False)
+st.bar_chart(region_counts)
 
+# Visualization #4: Average cost of cards by country
+st.header('Average Cost of a Deck per Country')
+df['price_card'] = pd.to_numeric(df['price_card'], errors='coerce')
+average_cost_per_country = df.groupby('country_tournament')['price_card'].mean().reset_index()
+st.bar_chart(average_cost_per_country.set_index('country_tournament'))
 
+# Train a RandomForestClassifier
+st.header('Train a RandomForestClassifier for Card Success Prediction')
+
+# Define success criteria
+card_occurrences = df['name_card'].value_counts().reset_index()
+card_occurrences.columns = ['name_card', 'appearances_in_winning_decks']
+success_threshold = card_occurrences['appearances_in_winning_decks'].quantile(0.9)
+
+# Create a binary target variable
+card_occurrences['success'] = card_occurrences['appearances_in_winning_decks'] >= success_threshold
+
+# Merge success information back to the original DataFrame
+df = pd.merge(df, card_occurrences[['name_card', 'success']], on='name_card', how='left')
+
+# Select features
+X = df[['name_card']]
+
+# Encode categorical features
+encoder = OneHotEncoder()
+X_encoded = encoder.fit_transform(X[['name_card']])
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X_encoded, df['success'], test_size=0.2, random_state=42)
+
+# Train a RandomForestClassifier
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+# Evaluate the model
+y_pred = model.predict(X_test)
+classification_result = classification_report(y_test, y_pred)
+
+# Display classification report
+st.subheader('Model Evaluation (RandomForestClassifier)')
+st.text(classification_result)
+
+# Predict success for a new card
+st.header('Predict Card Success')
+new_card_name = st.text_input('Enter a card name:')
+new_card_encoded = encoder.transform([[new_card_name]])
+prediction = model.predict(new_card_encoded)
+
+# Display prediction
+st.write(f'The predicted success for card "{new_card_name}" is: {prediction[0]}')
+
+# Additional Checks
+st.subheader('Additional Checks')
+st.text(df['success'].value_counts())
+st.text(df['name_card'].value_counts())
 
 if __name__ == "__main__":
     run()
