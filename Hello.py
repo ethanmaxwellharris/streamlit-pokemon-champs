@@ -14,37 +14,57 @@
 
 import streamlit as st
 from streamlit.logger import get_logger
+import pandas as pd
+import altair as alt
+import base64
+import numpy
+import pydeck
 
 LOGGER = get_logger(__name__)
 
 
 def run():
     st.set_page_config(
-        page_title="Shalom",
-        page_icon="👋",
+        page_title="Pokemon C.H.A.M.P.S.",
+        page_icon="🏆",
     )
 
-    st.write("# Pokemon CHAMPS 👋")
+    st.write("# Are you ready to ***Win Them All*** 👑")
 
+    st.sidebar.header('Select an Option')
     st.sidebar.success("Select a demo above.")
 
     st.markdown(
         """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
+        The Pokemon Tournament Training Club has began it's 2024 Season Training! This upcoming season is going to be very different however. We have been hard at work creating the ultimate application that helps create winning decks. This year we are unveiling the **Pokemon Card-based Helper for Assessing Match Performance System**! We like to call it **Pokemon CHAMPS** around the office though.
+
+        This revolutionary application will take the input of user cards and outputs the potential success rating for the user. The application will also output potential add-on's to your deck to add more flavor and achieve tournament dominance!
+
         ### See more complex demos
         - Use a neural net to [analyze the Udacity Self-driving Car Image
           Dataset](https://github.com/streamlit/demo-self-driving)
         - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
     """
     )
+
+    st.header('Enter a card')
+
+    card_input = "Lugia"
+
+    card = st.text_area("Card:", card_input, height=50)
+    card = card.splitlines()
+    card = '\n'.join(card) #Concatonates list to string
+
+    st.write("""
+             ***
+             """)
+    
+    st.header('Input: ')
+    card
+
+    st.header('Output: ')
+
+
 
 
 if __name__ == "__main__":
